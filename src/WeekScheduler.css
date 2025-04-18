@@ -1,0 +1,139 @@
+.week-scheduler {
+  max-width: 800px;
+  margin: 40px auto;
+  font-family: sans-serif;
+  border: 1px solid #ddd;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 8px;
+}
+
+.scheduler-header {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.scheduler-header h2 {
+  font-size: 24px;
+  margin-bottom: 10px;
+}
+
+.week-nav {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.week-label {
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.btn {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn.nav {
+  background-color: #6c5ce7;
+  color: white;
+}
+
+.btn.nav:hover {
+  background-color: #5a4bcf;
+}
+
+.btn.clear {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.btn.clear:hover {
+  background-color: #c0392b;
+}
+
+.btn.export {
+  background-color: #3498db;
+  color: white;
+}
+
+.btn.export:hover {
+  background-color: #2980b9;
+}
+
+.header-row {
+  display: grid;
+  grid-template-columns: 120px repeat(7, 1fr);
+  background-color: #f4f4f4;
+}
+
+.day-header {
+  text-align: center;
+  font-weight: bold;
+  padding: 10px;
+  background-color: #2c3e50;
+  color: white;
+  border-left: 1px solid #ccc;
+}
+
+.time-row {
+  display: grid;
+  grid-template-columns: 120px repeat(7, 1fr);
+}
+
+.time-label {
+  padding: 10px;
+  text-align: right;
+  font-weight: bold;
+  background-color: #f9f9f9;
+  border-right: 1px solid #ddd;
+}
+
+.cell {
+  height: 40px;
+  border: 1px solid #ddd;
+  background-color: #fff;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.cell:hover {
+  background-color: #e6e6e6;
+}
+
+.cell.selected {
+  background-color: #4caf50;
+  color: white;
+}
+
+.cell.locked {
+  background-color: #ddd;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.cell.unavailable {
+  background-color: #e74c3c;
+  color: white;
+}
+.btn.mode {
+  background-color: #7f8c8d;
+  color: white;
+}
+.btn.mode:hover {
+  background-color: #636e72;
+}
