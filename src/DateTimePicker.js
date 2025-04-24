@@ -15,9 +15,7 @@ import {
 const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const timeSlots = Array.from({ length: 12 }, (_, i) => {
   const hour = i + 8;
-  return `${hour.toString().padStart(2, "0")}:00 - ${(hour + 1)
-    .toString()
-    .padStart(2, "0")}:00`;
+  return `${hour.toString().padStart(2, "0")}:00`;
 });
 
 const lockedSlots = new Set();
@@ -28,11 +26,15 @@ export default function WeekScheduler() {
   const [weekOffset, setWeekOffset] = useState(0);
   const [groupData, setGroupData] = useState({});
   const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+
   const groupId = useRef(getOrCreateGroupId()).current;
   const userId = useRef(getOrCreateUserId()).current;
   const storageKey = getStorageKey(groupId);
   const isDragging = useRef(false);
   const dragStart = useRef(null);
+
+  const toggleMenu = () => setMenuOpen((prev) => !prev);
 
   const today = new Date();
   const currentWeekStart = new Date(today);
@@ -134,7 +136,7 @@ export default function WeekScheduler() {
   };
 
   const getSlotDateTime = (day, time) => {
-    const [startHour] = time.split(" - ")[0].split(":");
+    const [startHour] = time.split(":");
     const slotDate = new Date(currentViewStart);
     const dayIndex = days.indexOf(day);
     slotDate.setDate(currentViewStart.getDate() + dayIndex);
@@ -198,62 +200,72 @@ export default function WeekScheduler() {
           <span className="week-label">{getWeekLabel()}</span>
           <button className="btn nav" onClick={() => setWeekOffset((prev) => prev + 1)}>Next Week</button>
         </div>
-        <div className="action-buttons">
-          <button className="btn selectall" onClick={handleSelectAll}>Select All</button>
-          <button className="btn clear" onClick={handleClear}>Clear</button>
-          <button className="btn export" onClick={handleCopyLink}>Share</button>
-          <button className="btn nav" onClick={handleSubmit}>{hasSubmitted ? "Resubmit" : "Submit"}</button>
-        </div>
-        <div style={{ marginTop: 10 }}>
+        {/* <div style={{ marginTop: 10 }}>
           <strong>Submitted:</strong> {submittedUsers} / {totalUsers}
-        </div>
+        </div> */}
       </div>
 
       <div className="header-row">
-        <div className="time-label"></div>
         {days.map((day) => (
           <div key={day} className="day-header">{day}</div>
         ))}
       </div>
 
       {timeSlots.map((time) => (
-        <div className="time-row" key={time}>
-          <div className="time-label">{time}</div>
-          {days.map((day) => {
-            const key = `${day}-${time}`;
-            const slotDateTime = getSlotDateTime(day, time);
-            const isTimePast = slotDateTime < new Date();
-            const isLocked = lockedSlots.has(key) || isTimePast;
-            const status = currentWeekData[key];
+        <React.Fragment key={time}>
+          <div className="time-header"><span>{time}</span></div>
+          <div className="time-row">
+            {days.map((day) => {
+              const key = `${day}-${time}`;
+              const slotDateTime = getSlotDateTime(day, time);
+              const isTimePast = slotDateTime < new Date();
+              const isLocked = lockedSlots.has(key) || isTimePast;
+              const status = currentWeekData[key];
 
-            let heatLevel = "";
-            const ratio = slotAvailabilityRatio[key];
-            if (ratio >= 0.9) heatLevel = "heat-10";
-            else if (ratio >= 0.8) heatLevel = "heat-9";
-            else if (ratio >= 0.7) heatLevel = "heat-8";
-            else if (ratio >= 0.6) heatLevel = "heat-7";
-            else if (ratio >= 0.5) heatLevel = "heat-6";
-            else if (ratio >= 0.4) heatLevel = "heat-5";
-            else if (ratio >= 0.3) heatLevel = "heat-4";
-            else if (ratio >= 0.2) heatLevel = "heat-3";
-            else if (ratio >= 0.1) heatLevel = "heat-2";
-            else if (ratio > 0) heatLevel = "heat-1";
+              let heatLevel = "";
+              const ratio = slotAvailabilityRatio[key];
+              if (ratio >= 0.9) heatLevel = "heat-10";
+              else if (ratio >= 0.8) heatLevel = "heat-9";
+              else if (ratio >= 0.7) heatLevel = "heat-8";
+              else if (ratio >= 0.6) heatLevel = "heat-7";
+              else if (ratio >= 0.5) heatLevel = "heat-6";
+              else if (ratio >= 0.4) heatLevel = "heat-5";
+              else if (ratio >= 0.3) heatLevel = "heat-4";
+              else if (ratio >= 0.2) heatLevel = "heat-3";
+              else if (ratio >= 0.1) heatLevel = "heat-2";
+              else if (ratio > 0) heatLevel = "heat-1";
 
-            return (
-              <div
-                key={key}
-                className={`cell ${
-                  status === "available" ? "selected" : ""
-                } ${status === "unavailable" ? "unavailable" : ""} ${
-                  isLocked ? "locked" : ""
-                } ${heatLevel}`}
-                onMouseDown={() => handleMouseDown(day, time)}
-                onMouseEnter={() => handleMouseEnter(day, time)}
-              />
-            );
-          })}
-        </div>
+              return (
+                <div
+                  key={key}
+                  className={`cell ${
+                    status === "available" ? "selected" : ""
+                  } ${status === "unavailable" ? "unavailable" : ""} ${
+                    isLocked ? "locked" : ""
+                  } ${heatLevel}`}
+                  onMouseDown={() => handleMouseDown(day, time)}
+                  onMouseEnter={() => handleMouseEnter(day, time)}
+                />
+              );
+            })}
+          </div>
+        </React.Fragment>
       ))}
+
+      <div className={`fab-container ${menuOpen ? "open" : ""}`}>
+        <button className="fab-toggle" onClick={toggleMenu}>☰</button>
+        {menuOpen && (
+          <div className="fab-actions">
+            <button className="btn selectall" onClick={handleSelectAll}>Select All</button>
+            <button className="btn clear" onClick={handleClear}>Clear</button>
+            <button className="btn export" onClick={handleCopyLink}>Share</button>
+            <button className="btn nav" onClick={handleSubmit}>
+              {hasSubmitted ? "Resubmit" : "Submit"}
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
+  
 }

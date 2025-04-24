@@ -1,11 +1,18 @@
 .week-scheduler {
-  max-width: 800px;
-  margin: 40px auto;
-  font-family: sans-serif;
-  border: 1px solid #ddd;
+  width: 100%;
   padding: 20px;
   background-color: #fff;
   border-radius: 8px;
+  border: 1px solid #ddd;
+  box-sizing: border-box;
+}
+
+/* 桌面端最大宽度限制 */
+@media (min-width: 768px) {
+  .week-scheduler {
+    max-width: 800px;
+    margin: 40px auto;
+  }
 }
 
 .scheduler-header {
@@ -29,14 +36,6 @@
 .week-label {
   font-weight: bold;
   font-size: 14px;
-}
-
-.action-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-top: 10px;
 }
 
 .btn {
@@ -80,34 +79,67 @@
   background-color: #636e72;
 }
 
-.header-row {
-  display: grid;
-  grid-template-columns: 120px repeat(7, 1fr);
-  background-color: #f4f4f4;
+.btn.selectall {
+  background-color: #27ae60;
+  color: white;
+}
+.btn.selectall:hover {
+  background-color: #1e8449;
 }
 
+/* 横向滚动容器 */
+.scroll-container {
+  overflow-x: auto;
+  width: 100%;
+}
+
+/* 表头与格子严格对齐 */
+.header-row,
+.time-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* 星期标题 */
 .day-header {
   text-align: center;
   font-weight: bold;
-  padding: 10px;
+  padding: 10px 0;
   background-color: #2c3e50;
   color: white;
-  border-left: 1px solid #ccc;
+  border: 1px solid #ddd;
+  box-sizing: border-box;
 }
 
-.time-row {
+/* 每一行的时间点 */
+.time-header {
   display: grid;
-  grid-template-columns: 120px repeat(7, 1fr);
+  grid-template-columns: 80px auto;
+  align-items: center;
+  font-size: 12px;
+  color: #444;
+  margin-top: 12px;
+  margin-bottom: 4px;
+  padding-left: 8px;
+  box-sizing: border-box;
 }
 
-.time-label {
-  padding: 10px;
-  text-align: right;
-  font-weight: bold;
-  background-color: #f9f9f9;
-  border-right: 1px solid #ddd;
+.time-header span {
+  padding-left: 2px;
 }
 
+.time-header::after {
+  content: "";
+  height: 1px;
+  background-color: #ccc;
+  display: block;
+  width: 100%;
+  align-self: center;
+}
+
+/* 每行格子 */
 .cell {
   height: 40px;
   border: 1px solid #ddd;
@@ -116,29 +148,37 @@
   transition: background-color 0.2s;
   box-sizing: border-box;
   position: relative;
+  padding: 0;
+  margin: 0;
 }
-
 .cell:hover {
   background-color: #e6e6e6;
 }
-
 .cell.selected {
   background-color: #4caf50;
   color: white;
 }
-
 .cell.unavailable {
   background-color: #e74c3c;
   color: white;
 }
-
 .cell.locked {
   background-color: #ddd;
   cursor: not-allowed;
   opacity: 0.6;
 }
-
-/* ✅ 高亮交集格子 */
+.cell.selected::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  right: 2px;
+  bottom: 2px;
+  border: 2px solid #2ecc71;
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 3;
+}
 .cell.intersection::after {
   content: "";
   position: absolute;
@@ -152,15 +192,7 @@
   z-index: 2;
 }
 
-.btn.selectall {
-  background-color: #27ae60;
-  color: white;
-}
-.btn.selectall:hover {
-  background-color: #1e8449;
-}
-
-
+/* 热力图色阶 */
 .cell.heat-1 { background-color: #fff3e0; }
 .cell.heat-2 { background-color: #ffe0b2; }
 .cell.heat-3 { background-color: #ffcc80; }
@@ -172,15 +204,43 @@
 .cell.heat-9 { background-color: #ef6c00; }
 .cell.heat-10 { background-color: #e65100; }
 
-.cell.selected::after {
-  content: "";
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  right: 2px;
-  bottom: 2px;
-  border: 2px solid #2ecc71;
-  border-radius: 2px;
-  pointer-events: none;
-  z-index: 3;
+/* ✅ 右下角悬浮按钮菜单 */
+.fab-container {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
 }
+
+.fab-toggle {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: #6c5ce7;
+  color: white;
+  font-size: 24px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s;
+}
+
+.fab-container.open .fab-toggle {
+  transform: rotate(45deg);
+}
+
+.fab-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 10px;
+  align-items: flex-end;
+}
+
+.fab-actions .btn {
+  width: 140px;
+}
+
