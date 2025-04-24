@@ -52,7 +52,6 @@
   background-color: #6c5ce7;
   color: white;
 }
-
 .btn.nav:hover {
   background-color: #5a4bcf;
 }
@@ -61,7 +60,6 @@
   background-color: #e74c3c;
   color: white;
 }
-
 .btn.clear:hover {
   background-color: #c0392b;
 }
@@ -70,9 +68,16 @@
   background-color: #3498db;
   color: white;
 }
-
 .btn.export:hover {
   background-color: #2980b9;
+}
+
+.btn.mode {
+  background-color: #7f8c8d;
+  color: white;
+}
+.btn.mode:hover {
+  background-color: #636e72;
 }
 
 .header-row {
@@ -109,6 +114,8 @@
   background-color: #fff;
   cursor: pointer;
   transition: background-color 0.2s;
+  box-sizing: border-box;
+  position: relative;
 }
 
 .cell:hover {
@@ -120,20 +127,27 @@
   color: white;
 }
 
+.cell.unavailable {
+  background-color: #e74c3c;
+  color: white;
+}
+
 .cell.locked {
   background-color: #ddd;
   cursor: not-allowed;
   opacity: 0.6;
 }
 
-.cell.unavailable {
-  background-color: #e74c3c;
-  color: white;
-}
-.btn.mode {
-  background-color: #7f8c8d;
-  color: white;
-}
-.btn.mode:hover {
-  background-color: #636e72;
+/* ✅ 高亮交集格子 */
+.cell.intersection::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  right: 2px;
+  bottom: 2px;
+  border: 3px solid #3498db;
+  border-radius: 3px;
+  pointer-events: none;
+  z-index: 2;
 }
