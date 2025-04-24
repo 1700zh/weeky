@@ -24,7 +24,7 @@ const lockedSlots = new Set();
 
 export default function WeekScheduler() {
   const [availability, setAvailability] = useState({});
-  const [mode, setMode] = useState("available");
+  const [mode] = useState("available");
   const [weekOffset, setWeekOffset] = useState(0);
   const [groupData, setGroupData] = useState({});
   const [hasSubmitted, setHasSubmitted] = useState(false);
@@ -69,14 +69,50 @@ export default function WeekScheduler() {
   }, [groupId]);
 
   const handleSubmit = async () => {
+    await uploadAvailability(groupId, userId, availability);
     await submitAvailability(groupId, userId);
     setHasSubmitted(true);
+  };
+
+  const handleSelectAll = () => {
+    const allSlots = {};
+    days.forEach((day) => {
+      timeSlots.forEach((time) => {
+        const key = `${day}-${time}`;
+        const slotDateTime = getSlotDateTime(day, time);
+        if (!lockedSlots.has(key) && slotDateTime >= new Date()) {
+          allSlots[key] = "available";
+        }
+      });
+    });
+
+    setAvailability((prev) => ({
+      ...prev,
+      [currentWeekKey]: allSlots,
+    }));
   };
 
   const totalUsers = Object.keys(groupData).length;
   const submittedUsers = Object.values(groupData).filter((u) => u?.submitted)
     .length;
-  const allSubmitted = totalUsers > 0 && submittedUsers === totalUsers;
+
+  const slotAvailabilityRatio = {};
+  if (submittedUsers >= 2) {
+    const allWeekData = Object.values(groupData)
+      .filter((u) => u?.submitted)
+      .map((u) => u?.availability?.[currentWeekKey] || {});
+    const counts = {};
+    allWeekData.forEach((userData) => {
+      Object.entries(userData).forEach(([slot, value]) => {
+        if (value === "available") {
+          counts[slot] = (counts[slot] || 0) + 1;
+        }
+      });
+    });
+    Object.entries(counts).forEach(([slot, count]) => {
+      slotAvailabilityRatio[slot] = count / submittedUsers;
+    });
+  }
 
   const toggleCell = (day, time) => {
     if (isPastWeek) return;
@@ -128,15 +164,6 @@ export default function WeekScheduler() {
     setAvailability((prev) => ({ ...prev, [currentWeekKey]: {} }));
   };
 
-  const handleModeChange = (newMode) => {
-    setMode(newMode);
-    setAvailability((prev) => {
-      const updated = { ...prev };
-      updated[currentWeekKey] = {};
-      return updated;
-    });
-  };
-
   const handleCopyLink = () => {
     const link = getShareLink(groupId);
     if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -162,68 +189,20 @@ export default function WeekScheduler() {
 
   const currentWeekData = availability[currentWeekKey] || {};
 
-  const getIntersectionSlots = () => {
-    const allWeekData = Object.values(groupData).map(
-      (g) => g?.availability?.[currentWeekKey] || {}
-    );
-    const counts = {};
-    allWeekData.forEach((userData) => {
-      Object.keys(userData).forEach((slot) => {
-        if (userData[slot] === "available") {
-          counts[slot] = (counts[slot] || 0) + 1;
-        }
-      });
-    });
-    return Object.entries(counts)
-      .filter(([_, count]) => count === totalUsers)
-      .map(([slot]) => slot);
-  };
-
-  const intersectionSlots = allSubmitted ? getIntersectionSlots() : [];
-
   return (
     <div className="week-scheduler" onMouseUp={handleMouseUp}>
       <div className="scheduler-header">
         <h2>Select Weekly Availability</h2>
         <div className="week-nav">
-          <button
-            className="btn nav"
-            onClick={() => setWeekOffset((prev) => prev - 1)}
-          >
-            Previous Week
-          </button>
+          <button className="btn nav" onClick={() => setWeekOffset((prev) => prev - 1)}>Previous Week</button>
           <span className="week-label">{getWeekLabel()}</span>
-          <button
-            className="btn nav"
-            onClick={() => setWeekOffset((prev) => prev + 1)}
-          >
-            Next Week
-          </button>
+          <button className="btn nav" onClick={() => setWeekOffset((prev) => prev + 1)}>Next Week</button>
         </div>
         <div className="action-buttons">
-          {/* 已删除 Available 按钮 */}
-          <button
-            className={`btn mode ${
-              mode === "unavailable" ? "active" : ""
-            }`}
-            onClick={() => handleModeChange("unavailable")}
-          >
-            Not Available
-          </button>
-          <button className="btn clear" onClick={handleClear}>
-            Clear
-          </button>
-          {/* 已删除 Export 按钮 */}
-          <button className="btn export" onClick={handleCopyLink}>
-            Share
-          </button>
-          <button
-            className="btn nav"
-            disabled={hasSubmitted}
-            onClick={handleSubmit}
-          >
-            {hasSubmitted ? "Submitted" : "Submit"}
-          </button>
+          <button className="btn selectall" onClick={handleSelectAll}>Select All</button>
+          <button className="btn clear" onClick={handleClear}>Clear</button>
+          <button className="btn export" onClick={handleCopyLink}>Share</button>
+          <button className="btn nav" onClick={handleSubmit}>{hasSubmitted ? "Resubmit" : "Submit"}</button>
         </div>
         <div style={{ marginTop: 10 }}>
           <strong>Submitted:</strong> {submittedUsers} / {totalUsers}
@@ -233,9 +212,7 @@ export default function WeekScheduler() {
       <div className="header-row">
         <div className="time-label"></div>
         {days.map((day) => (
-          <div key={day} className="day-header">
-            {day}
-          </div>
+          <div key={day} className="day-header">{day}</div>
         ))}
       </div>
 
@@ -248,7 +225,19 @@ export default function WeekScheduler() {
             const isTimePast = slotDateTime < new Date();
             const isLocked = lockedSlots.has(key) || isTimePast;
             const status = currentWeekData[key];
-            const isIntersection = intersectionSlots.includes(key);
+
+            let heatLevel = "";
+            const ratio = slotAvailabilityRatio[key];
+            if (ratio >= 0.9) heatLevel = "heat-10";
+            else if (ratio >= 0.8) heatLevel = "heat-9";
+            else if (ratio >= 0.7) heatLevel = "heat-8";
+            else if (ratio >= 0.6) heatLevel = "heat-7";
+            else if (ratio >= 0.5) heatLevel = "heat-6";
+            else if (ratio >= 0.4) heatLevel = "heat-5";
+            else if (ratio >= 0.3) heatLevel = "heat-4";
+            else if (ratio >= 0.2) heatLevel = "heat-3";
+            else if (ratio >= 0.1) heatLevel = "heat-2";
+            else if (ratio > 0) heatLevel = "heat-1";
 
             return (
               <div
@@ -257,7 +246,7 @@ export default function WeekScheduler() {
                   status === "available" ? "selected" : ""
                 } ${status === "unavailable" ? "unavailable" : ""} ${
                   isLocked ? "locked" : ""
-                } ${isIntersection ? "intersection" : ""}`}
+                } ${heatLevel}`}
                 onMouseDown={() => handleMouseDown(day, time)}
                 onMouseEnter={() => handleMouseEnter(day, time)}
               />

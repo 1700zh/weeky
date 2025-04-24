@@ -151,3 +151,36 @@
   pointer-events: none;
   z-index: 2;
 }
+
+.btn.selectall {
+  background-color: #27ae60;
+  color: white;
+}
+.btn.selectall:hover {
+  background-color: #1e8449;
+}
+
+
+.cell.heat-1 { background-color: #fff3e0; }
+.cell.heat-2 { background-color: #ffe0b2; }
+.cell.heat-3 { background-color: #ffcc80; }
+.cell.heat-4 { background-color: #ffb74d; }
+.cell.heat-5 { background-color: #ffa726; }
+.cell.heat-6 { background-color: #ff9800; }
+.cell.heat-7 { background-color: #fb8c00; }
+.cell.heat-8 { background-color: #f57c00; }
+.cell.heat-9 { background-color: #ef6c00; }
+.cell.heat-10 { background-color: #e65100; }
+
+.cell.selected::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  right: 2px;
+  bottom: 2px;
+  border: 2px solid #2ecc71;
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 3;
+}
