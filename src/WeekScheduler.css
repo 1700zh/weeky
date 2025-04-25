@@ -244,3 +244,20 @@
   width: 140px;
 }
 
+.ratio-label {
+  font-size: 14px;
+  font-weight: bold;
+  color: #2c3e50;
+  display: block;
+  text-align: center;
+  line-height: 40px;
+}
+
+.cell.ratio-mode {
+  background-color: #fff !important;
+}
+
+.cell.locked.ratio-mode {
+  background-color: #ddd !important;
+  color: #999;
+}

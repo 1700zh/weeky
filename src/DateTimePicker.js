@@ -27,6 +27,7 @@ export default function WeekScheduler() {
   const [groupData, setGroupData] = useState({});
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showRatio, setShowRatio] = useState(false);
 
   const groupId = useRef(getOrCreateGroupId()).current;
   const userId = useRef(getOrCreateUserId()).current;
@@ -35,6 +36,7 @@ export default function WeekScheduler() {
   const dragStart = useRef(null);
 
   const toggleMenu = () => setMenuOpen((prev) => !prev);
+  const toggleMode = () => setShowRatio((prev) => !prev);
 
   const today = new Date();
   const currentWeekStart = new Date(today);
@@ -95,11 +97,10 @@ export default function WeekScheduler() {
   };
 
   const totalUsers = Object.keys(groupData).length;
-  const submittedUsers = Object.values(groupData).filter((u) => u?.submitted)
-    .length;
+  const submittedUsers = Object.values(groupData).filter((u) => u?.submitted).length;
 
   const slotAvailabilityRatio = {};
-  if (submittedUsers >= 2) {
+  if (submittedUsers >= 1) {
     const allWeekData = Object.values(groupData)
       .filter((u) => u?.submitted)
       .map((u) => u?.availability?.[currentWeekKey] || {});
@@ -118,22 +119,45 @@ export default function WeekScheduler() {
 
   const toggleCell = (day, time) => {
     if (isPastWeek) return;
+  
     const key = `${day}-${time}`;
     const slotDateTime = getSlotDateTime(day, time);
     if (lockedSlots.has(key) || slotDateTime < new Date()) return;
-
+  
     setAvailability((prev) => {
-      const updated = { ...prev };
-      const week = { ...(updated[currentWeekKey] || {}) };
-      if (week[key] === mode) {
-        delete week[key];
+      const prevWeek = prev[currentWeekKey] || {};
+      const updatedWeek = { ...prevWeek };
+  
+      // 开关状态
+      if (updatedWeek[key] === "available") {
+        delete updatedWeek[key];
       } else {
-        week[key] = mode;
+        updatedWeek[key] = "available";
       }
-      updated[currentWeekKey] = week;
-      return updated;
+  
+      const newAvailability = {
+        ...prev,
+        [currentWeekKey]: updatedWeek,
+      };
+  
+      // ✅ 一定要传 newAvailability，而不是旧 availability
+      uploadAvailability(groupId, userId, newAvailability);
+  
+      // ✅ 还要刷新 groupData，确保前端比值显示及时
+      setGroupData((prevGroup) => {
+        const newGroup = { ...prevGroup };
+        const user = newGroup[userId] || {};
+        const userAvailability = { ...(user.availability || {}) };
+        userAvailability[currentWeekKey] = updatedWeek;
+        newGroup[userId] = { ...user, availability: userAvailability };
+        return newGroup;
+      });
+  
+      return newAvailability;
     });
   };
+  
+  
 
   const getSlotDateTime = (day, time) => {
     const [startHour] = time.split(":");
@@ -200,9 +224,6 @@ export default function WeekScheduler() {
           <span className="week-label">{getWeekLabel()}</span>
           <button className="btn nav" onClick={() => setWeekOffset((prev) => prev + 1)}>Next Week</button>
         </div>
-        {/* <div style={{ marginTop: 10 }}>
-          <strong>Submitted:</strong> {submittedUsers} / {totalUsers}
-        </div> */}
       </div>
 
       <div className="header-row">
@@ -224,28 +245,33 @@ export default function WeekScheduler() {
 
               let heatLevel = "";
               const ratio = slotAvailabilityRatio[key];
-              if (ratio >= 0.9) heatLevel = "heat-10";
-              else if (ratio >= 0.8) heatLevel = "heat-9";
-              else if (ratio >= 0.7) heatLevel = "heat-8";
-              else if (ratio >= 0.6) heatLevel = "heat-7";
-              else if (ratio >= 0.5) heatLevel = "heat-6";
-              else if (ratio >= 0.4) heatLevel = "heat-5";
-              else if (ratio >= 0.3) heatLevel = "heat-4";
-              else if (ratio >= 0.2) heatLevel = "heat-3";
-              else if (ratio >= 0.1) heatLevel = "heat-2";
-              else if (ratio > 0) heatLevel = "heat-1";
+              if (!showRatio) {
+                if (ratio >= 0.9) heatLevel = "heat-10";
+                else if (ratio >= 0.8) heatLevel = "heat-9";
+                else if (ratio >= 0.7) heatLevel = "heat-8";
+                else if (ratio >= 0.6) heatLevel = "heat-7";
+                else if (ratio >= 0.5) heatLevel = "heat-6";
+                else if (ratio >= 0.4) heatLevel = "heat-5";
+                else if (ratio >= 0.3) heatLevel = "heat-4";
+                else if (ratio >= 0.2) heatLevel = "heat-3";
+                else if (ratio >= 0.1) heatLevel = "heat-2";
+                else if (ratio > 0) heatLevel = "heat-1";
+              }
 
               return (
                 <div
                   key={key}
-                  className={`cell ${
-                    status === "available" ? "selected" : ""
-                  } ${status === "unavailable" ? "unavailable" : ""} ${
+                  className={`cell ${status === "available" ? "selected" : ""} ${
                     isLocked ? "locked" : ""
-                  } ${heatLevel}`}
-                  onMouseDown={() => handleMouseDown(day, time)}
-                  onMouseEnter={() => handleMouseEnter(day, time)}
-                />
+                  } ${showRatio ? "ratio-mode" : heatLevel}`}
+                  onClick={() => toggleCell(day, time)}
+                >
+                  {showRatio && submittedUsers > 0 && !isLocked && (
+                    <span className="ratio-label">
+                      {Math.round((ratio || 0) * submittedUsers)}/{submittedUsers}
+                    </span>
+                  )}
+                </div>
               );
             })}
           </div>
@@ -262,10 +288,12 @@ export default function WeekScheduler() {
             <button className="btn nav" onClick={handleSubmit}>
               {hasSubmitted ? "Resubmit" : "Submit"}
             </button>
+            <button className="btn mode" onClick={toggleMode}>
+              {showRatio ? "Show Heatmap" : "Show Ratio"}
+            </button>
           </div>
         )}
       </div>
     </div>
   );
-  
 }
